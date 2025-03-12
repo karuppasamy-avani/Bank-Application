@@ -11,5 +11,5 @@ import com.bankofindia.account_service.model.externaldto.UserDto;
 public interface UserService {
 	
 	@GetMapping("/boi/user/{id}")
-	ResponseEntity<Boolean> fetchUserById(@PathVariable Long userId);
+	ResponseEntity<Boolean> fetchUserById(@PathVariable("id") Long userId);
 }
