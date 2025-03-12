@@ -28,15 +28,9 @@ public class UserController {
 		return new ResponseEntity<>(userService.createUser(user), HttpStatus.CREATED);
 	}
 	
-	@GetMapping
-	public ResponseEntity<String> fetchAllUsers(){
-		return null;
-		
-	}
-	
-	@PutMapping
-	public ResponseEntity<String> updateUser(){
-		return null;
+	@PutMapping("/update/{contactNumber}")
+	public ResponseEntity<Response> updateUser(@PathVariable String contactNumber, @RequestBody UserDto userDto){
+		return new ResponseEntity<>(userService.updateUser(contactNumber, userDto), HttpStatus.OK);
 		
 	}
 	
@@ -47,7 +41,7 @@ public class UserController {
 //	}
 	
 	@GetMapping("/{id}")
-	public ResponseEntity<Boolean> fetchUserById(@PathVariable Long userId){
+	public ResponseEntity<Boolean> fetchUserById(@PathVariable("id") Long userId){
 		return ResponseEntity.ok(userService.fetchUserById(userId));
 	}
 	

@@ -11,6 +11,7 @@ public interface UserService {
 	boolean fetchUserById(Long userId);
 
 	Response createUser(UserDto user);
-	
+
+	Response updateUser(String contactNumber, UserDto userDto);
 	
 }
