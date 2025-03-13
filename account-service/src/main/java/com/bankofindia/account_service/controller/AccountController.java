@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.bankofindia.account_service.model.AccountStatus;
 import com.bankofindia.account_service.model.dto.AccountDto;
 import com.bankofindia.account_service.model.externaldto.TransactionDto;
+import com.bankofindia.account_service.model.externaldto.UserDto;
 import com.bankofindia.account_service.model.response.Response;
 import com.bankofindia.account_service.service.AccountService;
 
@@ -28,8 +29,8 @@ public class AccountController {
 	
 	@PostMapping("/create")
 	// officer
-	public ResponseEntity<Response> createAccount(@RequestBody AccountDto accountDto){
-		return new ResponseEntity<>(accountService.createAccount(accountDto), HttpStatus.CREATED);
+	public ResponseEntity<Response> createAccount(@RequestBody UserDto userDto){
+		return new ResponseEntity<>(accountService.createAccount(userDto), HttpStatus.CREATED);
 	}
 	
 	@GetMapping("/details")

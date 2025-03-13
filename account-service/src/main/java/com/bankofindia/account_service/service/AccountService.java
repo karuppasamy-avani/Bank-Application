@@ -6,11 +6,12 @@ import com.bankofindia.account_service.model.AccountStatus;
 import com.bankofindia.account_service.model.dto.AccountDto;
 import com.bankofindia.account_service.model.entity.Account;
 import com.bankofindia.account_service.model.externaldto.TransactionDto;
+import com.bankofindia.account_service.model.externaldto.UserDto;
 import com.bankofindia.account_service.model.response.Response;
 
 public interface AccountService {
 	
-	Response createAccount(AccountDto Dto);
+	Response createAccount(UserDto Dto);
 	
 	Response getAccountDetails(AccountDto accountDto); 
 	

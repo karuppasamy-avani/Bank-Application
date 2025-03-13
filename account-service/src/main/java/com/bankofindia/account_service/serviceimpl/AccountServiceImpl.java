@@ -53,17 +53,18 @@ public class AccountServiceImpl implements AccountService{
 	
 	@Override
 	@Transactional
-	public Response createAccount(AccountDto accountDto) {
-		ResponseEntity<Boolean> user = userService.fetchUserById(accountDto.getUserId());
-        if (Boolean.FALSE.equals(user.getBody()))  {
-            throw new ResourceNotFound("user not found on the server");
-        }
+	public Response createAccount(UserDto accountDto) {
+//		ResponseEntity<Boolean> user = userService.fetchUserById(accountDto.getUserId());
+//        if (Boolean.FALSE.equals(user.getBody()))  {
+//            throw new ResourceNotFound("user not found on the server");
+//        }
 
-        accountRepo.findAccountByUserIdAndAccountType(accountDto.getUserId(), accountDto.getAccountType())
+        accountRepo.findAccountByUserIdAndAccountType(accountDto.getUserId(), AccountType.SAVINGS)
                 .ifPresent(account -> {
                     log.error("Account already exists on the server");
                     throw new ResourceConflict("Account already exists on the server");
                 });
+        
         Account account = new Account();
         modelMapper.map(accountDto, account);
         account.setAccountId(null);
@@ -71,7 +72,7 @@ public class AccountServiceImpl implements AccountService{
         account.setAccountNumber(ACC_PREFIX + number);
         account.setAccountStatus(AccountStatus.PENDING);
         account.setAvailableBalance(BigDecimal.valueOf(0));
-        account.setAccountType(accountDto.getAccountType());
+        account.setAccountType(AccountType.SAVINGS);
         accountRepo.save(account);
         return Response.builder()
                 .responseCode(success)
