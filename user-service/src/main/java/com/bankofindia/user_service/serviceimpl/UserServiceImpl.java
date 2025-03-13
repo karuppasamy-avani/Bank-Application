@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.bankofindia.user_service.exception.ResourceNotFound;
+import com.bankofindia.user_service.kafka.UserEventProducer;
 import com.bankofindia.user_service.model.dto.UserDto;
 import com.bankofindia.user_service.model.entity.User;
 import com.bankofindia.user_service.model.response.Response;
@@ -28,6 +29,9 @@ public class UserServiceImpl implements UserService {
 
 	@Autowired
 	private ModelMapper modelMapper;
+	
+	@Autowired
+	private UserEventProducer eventProducer;
 
 	@Override
 	public Response createUser(UserDto userDto) {
@@ -35,6 +39,9 @@ public class UserServiceImpl implements UserService {
 		modelMapper.typeMap(UserDto.class, User.class).addMappings(mapper -> mapper.skip(User::setUserId));
 		modelMapper.map(userDto, user);
 		userRepo.save(user);
+		
+		eventProducer.sendUserCreatedEvent(userDto);
+		
 		return Response.builder()
 				.responseCode(success)
 				.message("User created successfully")
