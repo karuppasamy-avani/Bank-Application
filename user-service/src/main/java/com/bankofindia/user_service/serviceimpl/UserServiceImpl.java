@@ -31,16 +31,20 @@ public class UserServiceImpl implements UserService {
 	private ModelMapper modelMapper;
 	
 	@Autowired
-	private UserEventProducer eventProducer;
+	private UserEventProducer userEventProducer;
 
 	@Override
 	public Response createUser(UserDto userDto) {
+		
 		User user = new User();
 		modelMapper.typeMap(UserDto.class, User.class).addMappings(mapper -> mapper.skip(User::setUserId));
 		modelMapper.map(userDto, user);
-		userRepo.save(user);
 		
-		eventProducer.sendUserCreatedEvent(userDto);
+		User savedUser = userRepo.save(user); 
+		log.info("User saved: {}", user);
+		
+		userDto.setUserId(savedUser.getUserId());
+		userEventProducer.sendUserCreatedEvent(userDto);
 		
 		return Response.builder()
 				.responseCode(success)
