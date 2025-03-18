@@ -1,5 +1,7 @@
 package com.bankofindia.account_service.service;
 
+import java.time.LocalDateTime;
+
 import org.springframework.http.ResponseEntity;
 
 import com.bankofindia.account_service.model.AccountStatus;
@@ -19,7 +21,7 @@ public interface AccountService {
 	
 	Response getBalance(String accountNumber);
 	
-	Response depositMoney(TransactionDto transaction);
+	Response depositMoney(TransactionDto transaction, LocalDateTime time);
 	
 	
 

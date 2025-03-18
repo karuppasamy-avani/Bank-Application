@@ -1,7 +1,7 @@
 package com.bankofindia.account_service.serviceimpl;
 
 import java.math.BigDecimal;
-
+import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import com.bankofindia.account_service.exception.ResourceConflict;
 import com.bankofindia.account_service.exception.ResourceNotFound;
 import com.bankofindia.account_service.external.UserService;
+import com.bankofindia.account_service.kafka.TransactionEventProducer;
 import com.bankofindia.account_service.model.AccountStatus;
 import com.bankofindia.account_service.model.AccountType;
 import com.bankofindia.account_service.model.dto.AccountDto;
@@ -26,6 +27,7 @@ import com.bankofindia.account_service.model.externaldto.UserDto;
 import com.bankofindia.account_service.model.response.Response;
 import com.bankofindia.account_service.repository.AccountRepository;
 import com.bankofindia.account_service.service.AccountService;
+import com.bankofindia.account_service.util.GetTheTimeAndDate;
 
 import jakarta.transaction.Transactional;
 
@@ -45,7 +47,13 @@ public class AccountServiceImpl implements AccountService{
 	private UserService userService;
 	
 	@Autowired
+	private TransactionEventProducer transactionEventProducer;
+	
+	@Autowired
 	private ModelMapper modelMapper;
+	
+	@Autowired
+	private GetTheTimeAndDate getcurrentTime;
 	
 	@Value("${spring.application.ok:SUCCESS}")
 	private String success;
@@ -53,20 +61,15 @@ public class AccountServiceImpl implements AccountService{
 	
 	@Override
 	@Transactional
-	public Response createAccount(UserDto accountDto) {
-//		ResponseEntity<Boolean> user = userService.fetchUserById(accountDto.getUserId());
-//        if (Boolean.FALSE.equals(user.getBody()))  {
-//            throw new ResourceNotFound("user not found on the server");
-//        }
-
-        accountRepo.findAccountByUserIdAndAccountType(accountDto.getUserId(), AccountType.SAVINGS)
+	public Response createAccount(UserDto userDto) {
+        accountRepo.findAccountByUserIdAndAccountType(userDto.getUserId(), AccountType.SAVINGS)
                 .ifPresent(account -> {
                     log.error("Account already exists on the server");
                     throw new ResourceConflict("Account already exists on the server");
                 });
         
         Account account = new Account();
-        modelMapper.map(accountDto, account);
+        modelMapper.map(userDto, account);
         account.setAccountId(null);
         long number = 1_000_000_000L + Math.abs(new Random().nextLong() % 9_000_000_000L); 
         account.setAccountNumber(ACC_PREFIX + number);
@@ -129,9 +132,17 @@ public class AccountServiceImpl implements AccountService{
 
 
 	@Override
-	public Response depositMoney(TransactionDto transaction) {
+	public Response depositMoney(TransactionDto transaction, LocalDateTime time) {
 		
-		return null;
+		transaction.setTime(getcurrentTime.getFormattedTime(time));
+		
+		transactionEventProducer.sendTransactionEvent(transaction);
+		
+		return Response.builder()
+				.responseCode(success)
+				.message("Available Balance")
+				.data(transaction)
+				.build();
 	}
 	
 	

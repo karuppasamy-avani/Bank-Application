@@ -1,7 +1,7 @@
 package com.bankofindia.account_service.model.externaldto;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,5 +16,5 @@ public class TransactionDto {
 	
 	private String accountNumber;
 	private BigDecimal amount;
-	private LocalDate time;
+	private String time;
 }

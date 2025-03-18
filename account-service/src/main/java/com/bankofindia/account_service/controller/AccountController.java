@@ -1,5 +1,7 @@
 package com.bankofindia.account_service.controller;
 
+import java.time.LocalDateTime;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -53,9 +55,10 @@ public class AccountController {
 	}
 	
 	
-	@PostMapping
+	@PostMapping("/deposit")
 	public ResponseEntity<Response> depositMoney(@RequestBody TransactionDto transaction){
-		return null;
+		LocalDateTime currentTime = LocalDateTime.now(); 
+		return new ResponseEntity<>(accountService.depositMoney(transaction, currentTime), HttpStatus.OK);
 	}
 	
 	
