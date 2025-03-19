@@ -38,6 +38,5 @@ public class Transaction {
     @Enumerated(EnumType.STRING)
     private TransactionStatus status;
 
-    @CreationTimestamp
     private LocalDateTime transactionTime;
 }
