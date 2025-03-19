@@ -21,7 +21,9 @@ import com.bankofindia.account_service.kafka.TransactionEventProducer;
 import com.bankofindia.account_service.model.AccountStatus;
 import com.bankofindia.account_service.model.AccountType;
 import com.bankofindia.account_service.model.dto.AccountDto;
+import com.bankofindia.account_service.model.dto.DepositResponseDto;
 import com.bankofindia.account_service.model.entity.Account;
+import com.bankofindia.account_service.model.externaldto.BalanceDto;
 import com.bankofindia.account_service.model.externaldto.TransactionDto;
 import com.bankofindia.account_service.model.externaldto.UserDto;
 import com.bankofindia.account_service.model.response.Response;
@@ -54,6 +56,8 @@ public class AccountServiceImpl implements AccountService{
 	
 	@Autowired
 	private GetTheTimeAndDate getcurrentTime;
+	
+	private AccountService accountService;
 	
 	@Value("${spring.application.ok:SUCCESS}")
 	private String success;
@@ -132,17 +136,68 @@ public class AccountServiceImpl implements AccountService{
 
 
 	@Override
-	public Response depositMoney(TransactionDto transaction, LocalDateTime time) {
+	public Response depositMoney(TransactionDto transactionDto, LocalDateTime time) {
 		
-		transaction.setTime(getcurrentTime.getFormattedTime(time));
+		Optional<Account> accountOptional = accountRepo.findByAccountNumber(transactionDto.getAccountNumber());
+
+	    if (accountOptional.isEmpty()) {
+	        throw new ResourceNotFound("Account not found for account number: " + transactionDto.getAccountNumber());
+	    }
 		
-		transactionEventProducer.sendTransactionEvent(transaction);
+	    Account account = accountOptional.get();     
+	    account.setAvailableBalance(account.getAvailableBalance().add(transactionDto.getAmount()));
+	    
+	    if(account.getAvailableBalance().compareTo(BigDecimal.valueOf(1000)) >= 0 
+	    		&& account.getAccountStatus().equals(AccountStatus.PENDING)) {
+	    	account.setAccountStatus(AccountStatus.ACTIVE);
+	    }
+	    
+	    transactionDto.setTransactionTime(time);
+		  // Pass the previous available amount to transaction service
+	    transactionDto.setBalance(account.getAvailableBalance());
+	    
+	    accountRepo.save(account);  
+	    
+		transactionEventProducer.sendTransactionEvent(transactionDto);
+		
+		DepositResponseDto depositResponse = new DepositResponseDto();
+		modelMapper.map(transactionDto, depositResponse);
 		
 		return Response.builder()
 				.responseCode(success)
 				.message("Available Balance")
-				.data(transaction)
+				.data(depositResponse)
 				.build();
+	}
+
+
+	@Override
+	public Response balanceUpdate(BalanceDto balanceDto) {
+		
+		Response response = accountService.getBalance(balanceDto.getAccountNumber());
+		Account account = modelMapper.map(response.getData(), Account.class);
+		
+		Optional<Account> existingAccount = accountRepo.findByAccountNumber(account.getAccountNumber());
+		
+	    if (existingAccount.isEmpty()) {
+	        throw new ResourceNotFound("Account not found for account number: " + account.getAccountNumber());
+	    }
+		
+	    Account availableAccount = existingAccount.get();
+	    
+	    if(
+	    availableAccount.getAvailableBalance()
+	    		.subtract(balanceDto.getPreviousBalance())
+	    		.equals(balanceDto.getAmount())
+	    ) {
+	    	
+	    }
+	    
+	    
+		
+		
+		
+		return null;
 	}
 	
 	
