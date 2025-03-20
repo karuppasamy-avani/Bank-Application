@@ -28,10 +28,10 @@ public class AccountEventConsumer {
 	    accountService.createAccount(userDto);
 	}
 	
-	@KafkaListener(topics = "balance-update", groupId = "account-service-group")
-	public void handleBalanceUpdated(@Payload BalanceDto balanceDto) {
-	    log.info("Received balance-update event: ", balanceDto);
-	    accountService.balanceUpdate(balanceDto);
-	}
+//	@KafkaListener(topics = "balance-update", groupId = "account-service-group")
+//	public void handleBalanceUpdated(@Payload BalanceDto balanceDto) {
+//	    log.info("Received balance-update event: ", balanceDto);
+//	    accountService.balanceUpdate(balanceDto);
+//	}
 
 }

@@ -22,7 +22,9 @@ public interface AccountService {
 	
 	Response getBalance(String accountNumber);
 	
-	Response depositMoney(TransactionDto transaction, LocalDateTime time);
+	Response depositMoney(TransactionDto transactionDto, LocalDateTime time);
+
+	Response withdrawMoney(TransactionDto transactionDto, LocalDateTime time);
 	
-	Response balanceUpdate(BalanceDto balanceDto);
+//	Response balanceUpdate(BalanceDto balanceDto);
 }

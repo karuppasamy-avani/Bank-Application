@@ -14,12 +14,15 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import com.bankofindia.account_service.exception.DatabaseSaveException;
 import com.bankofindia.account_service.exception.ResourceConflict;
 import com.bankofindia.account_service.exception.ResourceNotFound;
 import com.bankofindia.account_service.external.UserService;
 import com.bankofindia.account_service.kafka.TransactionEventProducer;
 import com.bankofindia.account_service.model.AccountStatus;
 import com.bankofindia.account_service.model.AccountType;
+import com.bankofindia.account_service.model.TransactionStatus;
+import com.bankofindia.account_service.model.TransactionType;
 import com.bankofindia.account_service.model.dto.AccountDto;
 import com.bankofindia.account_service.model.dto.DepositResponseDto;
 import com.bankofindia.account_service.model.entity.Account;
@@ -154,53 +157,93 @@ public class AccountServiceImpl implements AccountService{
 	    
 	    transactionDto.setTransactionTime(time);
 		  // Pass the previous available amount to transaction service
-	    transactionDto.setBalance(account.getAvailableBalance());
+	    transactionDto.setStatus(TransactionStatus.PENDING);
+	    transactionDto.setTransactionType(TransactionType.DEPOSIT);
 	    
-	    accountRepo.save(account);  
+	    //------------------------------upto this account fetching and updating happens-------------------------
 	    
-		transactionEventProducer.sendTransactionEvent(transactionDto);
+	    // so before the updating the transaction service we save it as pending as the transaction status
+	    transactionEventProducer.sendTransactionEvent(transactionDto);
+	    
+	    try {
+			
+	    	accountRepo.save(account);  
+	    	
+		} catch (DatabaseSaveException e) {
+			// we proceed to the exception in there we trigger the event as a FAILURE status
+			transactionDto.setStatus(TransactionStatus.SUCCESS);
+			transactionEventProducer.sendTransactionEvent(transactionDto);
+			throw new DatabaseSaveException("Failed to proceed the deposit");
+		}
+	    
+	    //if it saved successfully we trigger it as SUCCESS
+	    transactionDto.setStatus(TransactionStatus.SUCCESS);
+	    transactionEventProducer.sendTransactionEvent(transactionDto);
 		
 		DepositResponseDto depositResponse = new DepositResponseDto();
 		modelMapper.map(transactionDto, depositResponse);
 		
 		return Response.builder()
 				.responseCode(success)
-				.message("Available Balance")
+				.message("Deposited amount")
 				.data(depositResponse)
 				.build();
 	}
 
 
 	@Override
-	public Response balanceUpdate(BalanceDto balanceDto) {
-		
-		Response response = accountService.getBalance(balanceDto.getAccountNumber());
-		Account account = modelMapper.map(response.getData(), Account.class);
-		
-		Optional<Account> existingAccount = accountRepo.findByAccountNumber(account.getAccountNumber());
-		
-	    if (existingAccount.isEmpty()) {
-	        throw new ResourceNotFound("Account not found for account number: " + account.getAccountNumber());
+	public Response withdrawMoney(TransactionDto transactionDto, LocalDateTime time) {
+		Optional<Account> accountOptional = accountRepo.findByAccountNumber(transactionDto.getAccountNumber());
+
+	    if (accountOptional.isEmpty()) {
+	        throw new ResourceNotFound("Account not found for account number: " + transactionDto.getAccountNumber());
 	    }
 		
-	    Account availableAccount = existingAccount.get();
+	    Account account = accountOptional.get();     
 	    
-	    if(
-	    availableAccount.getAvailableBalance()
-	    		.subtract(balanceDto.getPreviousBalance())
-	    		.equals(balanceDto.getAmount())
-	    ) {
+	    if(account.getAvailableBalance().subtract(transactionDto.getAmount()).compareTo(BigDecimal.valueOf(100)) >= 0 
+	    		&& account.getAccountStatus().equals(AccountStatus.ACTIVE)) {
 	    	
+	    	account.setAvailableBalance(account.getAvailableBalance().subtract(transactionDto.getAmount()));
 	    }
 	    
+
+	    transactionDto.setTransactionTime(time);
+		  // Pass the previous available amount to transaction service
+	    transactionDto.setStatus(TransactionStatus.PENDING);
+	    transactionDto.setTransactionType(TransactionType.WITHDRAW);
 	    
+	    //------------------------------upto this account fetching and updating happens-------------------------
+	    
+	    // so before the updating the transaction service we save it as pending as the transaction status
+	    transactionEventProducer.sendTransactionEvent(transactionDto);
+	    
+	    try {
+			
+	    	accountRepo.save(account);  
+	    	
+		} catch (DatabaseSaveException e) {
+			// we proceed to the exception in there we trigger the event as a FAILURE status
+			transactionDto.setStatus(TransactionStatus.SUCCESS);
+			transactionEventProducer.sendTransactionEvent(transactionDto);
+			throw new DatabaseSaveException("Failed to proceed the withdraw");
+		}
+	    
+	    //if it saved successfully we trigger it as SUCCESS
+	    transactionDto.setStatus(TransactionStatus.SUCCESS);
+	    transactionEventProducer.sendTransactionEvent(transactionDto);
 		
+		DepositResponseDto depositResponse = new DepositResponseDto();
+		modelMapper.map(transactionDto, depositResponse);
 		
-		
-		return null;
+		return Response.builder()
+				.responseCode(success)
+				.message("Withdraw amount")
+				.data(depositResponse)
+				.build();
 	}
-	
-	
+
+
 
 
 

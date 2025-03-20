@@ -61,5 +61,13 @@ public class AccountController {
 		return new ResponseEntity<>(accountService.depositMoney(transaction, currentTime), HttpStatus.OK);
 	}
 	
+	@PostMapping("/withdraw")
+	public ResponseEntity<Response> withdrawMoney(@RequestBody TransactionDto transaction){
+		LocalDateTime currentTime = LocalDateTime.now(); 
+		return new ResponseEntity<>(accountService.withdrawMoney(transaction, currentTime), HttpStatus.OK);
+	}
+	
+	
+	
 	
 }

@@ -16,9 +16,16 @@ public class GlobalExceptionHandler {
 	}
 	
 	@ExceptionHandler(ResourceConflict.class)
-	public ResponseEntity<String> handleRestControllerAdvice(ResourceConflict ex)
+	public ResponseEntity<String> handleResourceConflict(ResourceConflict ex)
 	{
 		return ResponseEntity.status(HttpStatus.CONFLICT)
+				.body(ex.getMessage());
+	}
+	
+	@ExceptionHandler(DatabaseSaveException.class)
+	public ResponseEntity<String> handleDatabaseSaveException(DatabaseSaveException ex)
+	{
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 				.body(ex.getMessage());
 	}
 }

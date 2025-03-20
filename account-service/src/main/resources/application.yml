@@ -13,7 +13,8 @@ spring:
       ddl-auto: update
     database-platform: org.hibernate.dialect.MySQL8Dialect
     show-sql: true
-
+    properties:
+      javax.persistence.query.timeout: 5000  # Query timeout in milliseconds	
   kafka:
     bootstrap-servers: 
 #      - b-3.bankingmskcluster.canhri.c4.kafka.eu-north-1.amazonaws.com:9092
