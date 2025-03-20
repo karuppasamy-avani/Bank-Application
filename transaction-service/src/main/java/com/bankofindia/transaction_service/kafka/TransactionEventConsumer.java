@@ -17,10 +17,23 @@ public class TransactionEventConsumer {
 	@Autowired
 	private TransactionService transactionService;
 	
-	@KafkaListener(topics = "transaction-happened", groupId = "transaction-service-group")
-	public void handleUserCreated(@Payload TransactionDto transactionDto) {
-	    log.info("Received transaction-happened event: {}", transactionDto);
-	    transactionService.depositMoney(transactionDto);
-	}
+	 @KafkaListener(topics = "transaction-happened", groupId = "transaction-service-group")
+	    public void handleTransaction(@Payload TransactionDto transactionDto) {
+	        log.info("Received transaction-happened event: {}", transactionDto);
+
+	     
+	        switch (transactionDto.getTransactionType()) {
+	            case DEPOSIT:
+	                transactionService.depositMoney(transactionDto);
+	                break;
+
+	            case WITHDRAW:
+	                transactionService.withdrawMoney(transactionDto);
+	                break;
+
+	            default:
+	                log.warn("Unknown transaction type: {}", transactionDto.getTransactionType());
+	        }
+	    }
 
 }

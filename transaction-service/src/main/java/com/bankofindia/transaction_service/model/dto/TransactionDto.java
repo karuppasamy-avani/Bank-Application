@@ -26,7 +26,7 @@ public class TransactionDto {
 
     private BigDecimal amount;
     
-	private BigDecimal balance;
+//	private BigDecimal balance;
 
     private TransactionStatus status;
 
