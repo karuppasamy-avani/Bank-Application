@@ -1,6 +1,7 @@
 package com.bankofindia.account_service.serviceimpl;
 
 import java.math.BigDecimal;
+
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Optional;
@@ -18,6 +19,7 @@ import com.bankofindia.account_service.exception.DatabaseSaveException;
 import com.bankofindia.account_service.exception.ResourceConflict;
 import com.bankofindia.account_service.exception.ResourceNotFound;
 import com.bankofindia.account_service.external.UserService;
+import com.bankofindia.account_service.kafka.AccountCreatedEventProducer;
 import com.bankofindia.account_service.kafka.TransactionEventProducer;
 import com.bankofindia.account_service.model.AccountStatus;
 import com.bankofindia.account_service.model.AccountType;
@@ -27,6 +29,7 @@ import com.bankofindia.account_service.model.dto.AccountDto;
 import com.bankofindia.account_service.model.dto.DepositResponseDto;
 import com.bankofindia.account_service.model.entity.Account;
 import com.bankofindia.account_service.model.externaldto.BalanceDto;
+import com.bankofindia.account_service.model.externaldto.NotificationDto;
 import com.bankofindia.account_service.model.externaldto.TransactionDto;
 import com.bankofindia.account_service.model.externaldto.UserDto;
 import com.bankofindia.account_service.model.response.Response;
@@ -55,6 +58,9 @@ public class AccountServiceImpl implements AccountService{
 	private TransactionEventProducer transactionEventProducer;
 	
 	@Autowired
+	private AccountCreatedEventProducer accountCreatedEventProducer;
+	
+	@Autowired
 	private ModelMapper modelMapper;
 	
 	@Autowired
@@ -64,8 +70,8 @@ public class AccountServiceImpl implements AccountService{
 	
 	@Value("${spring.application.ok:SUCCESS}")
 	private String success;
-
 	
+
 	@Override
 	@Transactional
 	public Response createAccount(UserDto userDto) {
@@ -83,6 +89,16 @@ public class AccountServiceImpl implements AccountService{
         account.setAccountStatus(AccountStatus.PENDING);
         account.setAvailableBalance(BigDecimal.valueOf(0));
         account.setAccountType(AccountType.SAVINGS);
+        
+        //-----------sending the account created event to consumers----------------
+        NotificationDto notificationDto = new NotificationDto(); 
+        notificationDto.setAccountNumber(account.getAccountNumber());
+        notificationDto.setEmailId(userDto.getEmailId());
+        notificationDto.setContactNumber(userDto.getContactNumber());
+        System.out.println(notificationDto);
+        accountCreatedEventProducer.sendAccountCreatedEvent(notificationDto);
+        //------------------------------------------------------------------------
+        
         accountRepo.save(account);
         return Response.builder()
                 .responseCode(success)
